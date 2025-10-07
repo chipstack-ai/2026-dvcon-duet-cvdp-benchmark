@@ -160,7 +160,7 @@ An example response is:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt}
                 ],
-                temperature=0.1  # Low temperature for consistent scoring
+                temperature=0.1 if self.model != "gpt-5" else 1  # Low temperature for consistent scoring. GPT-5 only supports temp=1.
             )
             
             result_text = completion.choices[0].message.content

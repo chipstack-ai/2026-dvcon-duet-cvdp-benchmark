@@ -17,6 +17,7 @@
 
 import argparse
 import os
+from pathlib import Path
 import subprocess
 import json
 import shutil
@@ -187,13 +188,14 @@ def combine_reports(sample_prefixes: List[str], output_prefix: str, n_samples: i
     
     print(f"Use run_reporter.py to analyze pass@{k_threshold} metrics")
 
-def run_samples(args: argparse.Namespace, n_samples: int, k_threshold: int) -> None:
+def run_samples(args: argparse.Namespace, n_samples: int, k_threshold: int,
+    # Always use run_benchmark.py since harness functionality has been consolidated into it
+    script_name = "run_benchmark.py"
+                ) -> None:
     """Run multiple samples of run_benchmark.py and combine the results."""
     base_prefix = args.prefix or config.get("BENCHMARK_PREFIX")
     sample_prefixes = []
     
-    # Always use run_benchmark.py since harness functionality has been consolidated into it
-    script_name = "run_benchmark.py"
     
     print(f"Running in {'single issue' if args.id is not None else 'full benchmark'} mode")
     
@@ -291,6 +293,10 @@ def run_samples(args: argparse.Namespace, n_samples: int, k_threshold: int) -> N
             # Skip our custom args and the command argument
             if arg_name in ["n_samples", "k_threshold", "prefix", "command"]:
                 continue
+
+            # Skip --run-benchmark-script-path since we're using that directly
+            if arg_name == "run_benchmark_script_path":
+                continue
             
             # Skip the ID parameter if it's None and we're in benchmark mode
             if arg_name == "id" and arg_value is None:
@@ -362,6 +368,8 @@ if __name__ == "__main__":
     # Add our custom arguments for run_samples.py first
     parser.add_argument("-n", "--n-samples", type=int, default=5, help="Number of samples to run")
     parser.add_argument("-k", "--k-threshold", type=int, help="Pass@k threshold (default: 1)", default=1)
+
+    parser.add_argument("--run-benchmark-script-path", type=Path, default="run_benchmark.py", help="Path to the run_benchmark.py script")
     
     # Add common arguments shared with run_benchmark.py
     add_common_arguments(parser)
@@ -382,4 +390,4 @@ if __name__ == "__main__":
     atexit.register(cleanup_logging)
     
     # Run the samples
-    run_samples(args, args.n_samples, args.k_threshold) 
+    run_samples(args, args.n_samples, args.k_threshold, script_name=str(args.run_benchmark_script_path)) 
